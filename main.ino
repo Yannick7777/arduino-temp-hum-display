@@ -20,73 +20,69 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST); // Set HW SPI pi
 
 const int buttonPin = 16;
 
-const int AMOUNT_DATAPOINTS = 75; // ~120 max on Arduino Nano (2kB SRAM)
-const float WAIT_TIME = 150;
+const int AMOUNT_DATAPOINTS = 120; // ~120 max on Arduino Nano (2kB SRAM)
+const float WAIT_TIME = 0.5;
 
 class DataStorage {
 private:
   float data[AMOUNT_DATAPOINTS];
-  int cursor;
+  int rIndex;
+  int rCount;
   const int MAX_DATA_POINTS;
   const String UNIT;
 
 public:
   DataStorage(String unit, int maxDataPoints)
-    : UNIT(unit), MAX_DATA_POINTS(maxDataPoints), cursor(0) {
-    for (int i = 0; i < MAX_DATA_POINTS; i++) {
+    : UNIT(unit), MAX_DATA_POINTS(maxDataPoints), rIndex(0), rCount(0) {
+    for (int i = 0; i < this->MAX_DATA_POINTS; i++) {
       this->data[i] = 0;
-    };
-  };
-
-
-  float getDataByIndex(int index) {
-    if(index < 0 || index >= this->cursor) return 0;
-    return this->data[index];
-  };
-
-  int getCursor() const {return this->cursor;};
+    }
+  }
 
   void addData(float newData) {
-    if (this->cursor < this->MAX_DATA_POINTS) {
-      this->data[this->cursor++] = newData; //++cursor, cursor++, know the difference :3
-    } else {
-      for (int i = 0; i < this->MAX_DATA_POINTS - 1; i++) {
-        this->data[i] = this->data[i + 1];
-      }
-      this->data[this->MAX_DATA_POINTS - 1] = newData;
-    }
-  };
+    this->data[this->rIndex] = newData;
+    this->rIndex = (this->rIndex + 1) % this->MAX_DATA_POINTS;
+    if (this->rCount < this->MAX_DATA_POINTS) this->rCount++;
+  }
+
+  float getDataByIndex(int logicalIndex) {
+    if(logicalIndex < 0 || logicalIndex >= this->rCount) return 0;
+    int realIndex = (this->rIndex + this->MAX_DATA_POINTS - this->rCount + logicalIndex) % this->MAX_DATA_POINTS; // pain
+    return this->data[realIndex];
+  }
+
+  int getCursor() const { return this->rCount; }
 
   float getMaxDataPoint() {
-    if (this->cursor == 0) return 0;
+    if (this->rCount == 0) return 0;
     float maxY = this->data[0];
-    for (int i = 1; i < this->cursor; i++) {
-      if (this->data[i] > maxY) maxY = this->data[i];
+    for (int i = 1; i < this->rCount; i++) {
+      float v = this->data[i];
+      if (v > maxY) maxY = v;
     }
     return maxY;
-  };
+  }
 
   float getMinDataPoint() {
-    if (this->cursor == 0) return 0;
+    if (this->rCount == 0) return 0;
     float minY = this->data[0];
-    for (int i = 1; i < this->cursor; i++) {
-      if (this->data[i] < minY) minY = this->data[i];
+    for (int i = 1; i < this->rCount; i++) {
+      float v = this->data[i];
+      if (v < minY) minY = v;
     }
     return minY;
-  };
+  }
 
   float getAvgDataPoint() {
-    if (this->cursor == 0) return 0;
-    float avgY = this->data[0];
-    for (int i = 1; i < this->cursor; i++) {
-      avgY += data[i];
-    };
-    return avgY / this->cursor;
-  };
+    if (this->rCount == 0) return 0;
+    float sum = 0;
+    for (int i = 0; i < this->rCount; i++) {
+      sum += this->data[i];
+    }
+    return sum / this->rCount;
+  }
 
-  String getUnit() {
-    return this->UNIT;
-  };
+  String getUnit() { return this->UNIT; }
 };
 
 class Element {
@@ -311,7 +307,6 @@ void loop() {
   if (currentMillis - previousMillis >= WAIT_TIME * 1000) {
     previousMillis = currentMillis;
     if (sht3x.measure()) {
-      Serial.println(digitalRead(buttonPin));
       float temp = sht3x.temperature();
       float hum = sht3x.humidity();
 
