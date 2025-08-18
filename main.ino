@@ -20,8 +20,8 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST); // Set HW SPI pi
 
 const int buttonPin = 16;
 
-const int AMOUNT_DATAPOINTS = 120; // ~120 max on Arduino Nano (2kB SRAM)
-const float WAIT_TIME = 0.5;
+const int AMOUNT_DATAPOINTS = 30; // ~120 max on Arduino Nano (2kB SRAM)
+const float WAIT_TIME = 60;
 
 class DataStorage {
 private:
@@ -330,13 +330,13 @@ void loop() {
       tft.print(F("SENSOR\nREAD\nERROR"));
       delay(500);
       Wire.begin();
-      sht3x.begin();
+      sht3x.begin(); 
       sht3xErrorLastCycle = true;
     }
   }
   if (digitalRead(buttonPin)){
       if (!buttonPressedLastCycle){
-        currentScreen = config->cycleScreen();
+        config->cycleScreen()->draw();
         buttonPressedLastCycle = true;
       }
   } else {
