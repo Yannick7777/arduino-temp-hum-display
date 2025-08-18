@@ -230,7 +230,7 @@ class DisplayConfig {
 };
 
 
-unsigned long previousMillis = 0;
+unsigned long previousMillis = -1000000000;
 bool buttonPressedLastCycle = false;
 bool sht3xErrorLastCycle = false;
 
