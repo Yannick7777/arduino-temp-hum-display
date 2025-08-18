@@ -18,12 +18,14 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST); // Set HW SPI pi
 #define PRIMARY_FOREGROUND_COLOUR tft.color565(187, 0, 255)
 #define SECONDARY_FOREGROUND_COLOUR ST77XX_WHITE
 
-
 const int buttonPin = 16;
+
+const int AMOUNT_DATAPOINTS = 75; // ~120 max on Arduino Nano (2kB SRAM)
+const float WAIT_TIME = 150;
 
 class DataStorage {
 private:
-  float* data;
+  float data[AMOUNT_DATAPOINTS];
   int cursor;
   const int MAX_DATA_POINTS;
   const String UNIT;
@@ -31,15 +33,11 @@ private:
 public:
   DataStorage(String unit, int maxDataPoints)
     : UNIT(unit), MAX_DATA_POINTS(maxDataPoints), cursor(0) {
-    this->data = new float[MAX_DATA_POINTS];
     for (int i = 0; i < MAX_DATA_POINTS; i++) {
       this->data[i] = 0;
     };
   };
 
-  ~DataStorage() {
-    delete[] this->data;
-  };
 
   float getDataByIndex(int index) {
     if(index < 0 || index >= this->cursor) return 0;
@@ -236,9 +234,6 @@ bool sht3xErrorLastCycle = false;
 
 
 // CONFIG START
-const int AMOUNT_DATAPOINTS = 75; // ~120 max on Arduino Nano (2kB SRAM)
-const float WAIT_TIME = 150;
-
 DataStorage* tempData;
 DataStorage* humData;
 GraphElement* graphTemp;
