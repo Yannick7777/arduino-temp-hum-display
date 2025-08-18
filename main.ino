@@ -225,6 +225,8 @@ class DisplayConfig {
 
 
 unsigned long previousMillis = -1000000000;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;
 bool buttonPressedLastCycle = false;
 bool sht3xErrorLastCycle = false;
 
@@ -335,9 +337,10 @@ void loop() {
     }
   }
   if (digitalRead(buttonPin)){
-      if (!buttonPressedLastCycle){
+      if (!buttonPressedLastCycle && millis() - lastDebounceTime > debounceDelay){
         config->cycleScreen()->draw();
         buttonPressedLastCycle = true;
+        lastDebounceTime = millis();
       }
   } else {
     buttonPressedLastCycle = false;
