@@ -215,20 +215,32 @@ class DisplayConfig {
     tft.setRotation(1);
     tft.fillScreen(BACKGROUND_COLOUR);
   };
-  Screen* applyScreen(int index){
-    this->screenIndex = index;
-    tft.fillScreen(BACKGROUND_COLOUR);
-    return this->screens[index];
-  };
-  Screen* cycleScreen() {
-    this->screenIndex = (this->screenIndex + 1) % this->screenCount;
-    return this->applyScreen(this->screenIndex);
+
+  void setScreen(int i) {
+    this->screenIndex = i;
   }
 
-  Screen* getCurrentScreen() {return this->screens[this->screenIndex];}
-  Screen* getCurrentScreenIndex() {return this->screenIndex;}
+  void applyScreen(int i){
+    this->setScreen(i);
+    this->drawScreen(i);    
+  };
 
+  void cycleScreen() {this->screenIndex = (this->screenIndex + 1) % this->screenCount;}
+
+  // Screen* getCurrentScreen() {return this->screens[this->screenIndex];}
+  int getCurrentScreenIndex() {return this->screenIndex;}
+
+  void drawScreen(int i) {
+    tft.fillScreen(BACKGROUND_COLOUR);
+    this->screens[i]->draw();
+  }
+
+  void drawCurrentScreen() {
+    this->drawScreen(this->screenIndex);
+  }
 };
+
+
 
 
 const byte DEBOUNCE_DELAY = 50;
@@ -253,8 +265,6 @@ Screen* screenBigTemp;
 Screen* screenBigHum;
 
 DisplayConfig* config;
-
-Screen* currentScreen;
 
 void setup() {
 
@@ -293,8 +303,6 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("Serial started."));
 
-  currentScreen = config->getCurrentScreen();
-
   pinMode(buttonPin, INPUT);
 
   Wire.begin();
@@ -310,7 +318,7 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
   if (sht3xErrorLastCycle) {
-    config->applyScreen(config->getCurrentScreenIndex());
+    config->drawCurrentScreen();
     sht3xErrorLastCycle = false;
   }
   if (currentMillis - previousMillis >= WAIT_TIME * 1000) {
@@ -323,7 +331,7 @@ void loop() {
       humData->addData(hum);
       
 
-      currentScreen->draw();
+      config->drawCurrentScreen();
 
       Serial.print(F("Temperature: "));
       Serial.print(temp);
@@ -345,7 +353,8 @@ void loop() {
   }
   if (digitalRead(buttonPin)){
       if (!buttonPressedLastCycle && millis() - lastDebounceTime > DEBOUNCE_DELAY){
-        config->cycleScreen()->draw();
+        config->cycleScreen();
+        config->drawCurrentScreen();
         buttonPressedLastCycle = true;
         lastDebounceTime = millis();
       }
@@ -353,4 +362,3 @@ void loop() {
     buttonPressedLastCycle = false;
   }
 }
-
