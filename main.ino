@@ -153,10 +153,15 @@ private:
     return this->Y + this->MARGIN + (scaledHeight - 1) - (int)(norm * (scaledHeight - 1));
   }
 
+  void drawMarker(float value, bool left, bool right) {
+    int y = this->getScaledY(value, this->data.getMinDataPoint(), this->data.getMaxDataPoint());
+    if (left) tft.drawLine(this->X, y, this->X + 3, y, SECONDARY_FOREGROUND_COLOUR);
+    if (right) tft.drawLine(this->X + this->WIDTH - 1, y, this->X + this->WIDTH - 4, y, SECONDARY_FOREGROUND_COLOUR);
+  }
+
 public:
   GraphElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, int amountDataPoints, int margin)
     : Element(x, y, width, height, data, drawBoarder), AMOUNT_DATAPOINTS(amountDataPoints), MARGIN(margin) {}
-
   void render() override {
     if (this->DRAW_BOARDER) this->drawBoarder();
     this->eraseBoarderContent();
@@ -180,6 +185,9 @@ public:
       int y = this->getScaledY(this->data.getDataByIndex(0));
       tft.drawPixel(x, y, PRIMARY_FOREGROUND_COLOUR);
     }
+    this->drawMarker(minY, false, true);
+    this->drawMarker(maxY, false, true);
+    this->drawMarker(this->data.getAvgDataPoint(), false, true);
   }
 };
 
@@ -346,3 +354,4 @@ void loop() {
     buttonPressedLastCycle = false;
   }
 }
+
