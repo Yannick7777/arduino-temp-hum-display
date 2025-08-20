@@ -117,6 +117,7 @@ class MaxAvgMinElement : public Element {
 
     const String unit = this->data.getUnit();
     tft.setTextSize(1);
+    tft.setTextColor(SECONDARY_FOREGROUND_COLOUR);
     tft.setCursor(this->X + 1, this->Y + 1);
     tft.print(F("Max: "));
     tft.print(this->data.getMaxDataPoint(), 1);
@@ -133,6 +134,21 @@ class MaxAvgMinElement : public Element {
   };
 };
 
+class showCurrentValue : public Element {
+  public:
+  using Element::Element;
+  void render() override {
+    if (this->DRAW_BOARDER) this->drawBoarder();
+    this->eraseBoarderContent();
+
+    const String unit = this->data.getUnit();
+    tft.setTextSize(5);
+    tft.setTextColor(PRIMARY_FOREGROUND_COLOUR);
+    tft.setCursor(this->X + 1, this->Y + 1);
+    tft.print(this->data.getMaxDataPoint(), 1);
+    tft.print(this->data.getUnit());
+  };
+};
 
 class GraphElement : public Element {
 private:
@@ -259,10 +275,13 @@ MaxAvgMinElement* bigMaxAvgMinTemp;
 MaxAvgMinElement* bigMaxAvgMinHum;
 MaxAvgMinElement* maxAvgMinTemp;
 MaxAvgMinElement* maxAvgMinHum;
+showCurrentValue* showCurrentTemp;
+showCurrentValue* showCurrentHum;
 Screen* screenTemp;
 Screen* screenHum;
 Screen* screenBigTemp;
 Screen* screenBigHum;
+Screen* screenCurrent;
 
 DisplayConfig* config;
 
@@ -279,21 +298,26 @@ void setup() {
   maxAvgMinTemp = new MaxAvgMinElement(90, 5, 65, 70, *tempData, false);
   graphHum = new GraphElement(5, 5, 80, 70, *humData, true, AMOUNT_DATAPOINTS, 10);
   maxAvgMinHum = new MaxAvgMinElement(90, 5, 65, 70, *humData, false);
+  showCurrentTemp = new showCurrentValue(0, 0, 40, 80, *tempData, false); 
+  showCurrentHum = new showCurrentValue(0, 40, 40, 80, *humData, false);
 
   // Element 'collections' / arrays. Arguments: Array containing pointers to elements, nullptr must be at the end.
   static Element* elemArrTemp[] = { graphTemp, maxAvgMinTemp, nullptr };
   static Element* elemArrHum[] = { graphHum, maxAvgMinHum, nullptr };
   static Element* elemBigArrTemp[] = { bigMaxAvgMinTemp, nullptr };
   static Element* elemBigArrHum[] = { bigMaxAvgMinHum, nullptr };
+  static Element* currentArr[] = { showCurrentTemp, showCurrentHum, nullptr };
 
   // Screens. Arguments: Element arrays.
   screenTemp = new Screen(elemArrTemp);
   screenHum = new Screen(elemArrHum);
   screenBigTemp = new Screen(elemBigArrTemp);
   screenBigHum = new Screen(elemBigArrHum);
+  screenCurrent = new Screen(currentArr);
+
 
   // Screen 'collections' / arrays: Arguments: Array containing pointers to screens, nullptr must be at the end.
-  static Screen* screenArr[] = { screenTemp, screenHum, screenBigTemp, screenBigHum, nullptr};
+  static Screen* screenArr[] = { screenCurrent, screenTemp, screenHum, screenBigTemp, screenBigHum, nullptr};
 
   // Config. Arguments: A screen array.
   config = new DisplayConfig(screenArr);
@@ -362,3 +386,4 @@ void loop() {
     buttonPressedLastCycle = false;
   }
 }
+
