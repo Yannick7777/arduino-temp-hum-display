@@ -109,24 +109,27 @@ public:
 };
 
 class MaxAvgMinElement : public Element {
+  protected:
+    const int textSize;
   public:
-  using Element::Element;
+  explicit MaxAvgMinElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, int textSize)
+    : Element(x, y, width, height, data, drawBoarder), textSize(textSize) {}
   void render() override {
     if (this->DRAW_BOARDER) this->drawBoarder();
     this->eraseBoarderContent();
 
     const String unit = this->data.getUnit();
-    tft.setTextSize(1);
+    tft.setTextSize(this->textSize);
     tft.setTextColor(SECONDARY_FOREGROUND_COLOUR);
     tft.setCursor(this->X + 1, this->Y + 1);
     tft.print(F("Max: "));
     tft.print(this->data.getMaxDataPoint(), 1);
     tft.print(unit);
-    tft.setCursor(this->X + 1, this->Y + (this->HEIGHT / 2) - 3.5);
+    tft.setCursor(this->X + 1, this->Y + this->HEIGHT / 2 - this->textSize * 3.5);
     tft.print(F("Avg: "));
     tft.print(this->data.getAvgDataPoint(), 1);
     tft.print(unit);
-    tft.setCursor(this->X + 1, this->Y + this->HEIGHT - 7.0 - 1);
+    tft.setCursor(this->X + 1, this->Y + this->HEIGHT - this->textSize * 7);
     tft.print(F("Min: "));
     tft.print(this->data.getMinDataPoint(), 1);
     tft.print(unit);
@@ -292,12 +295,12 @@ void setup() {
   humData = new DataStorage("%", AMOUNT_DATAPOINTS);
 
   // Screen elements. Base arguments: X Pos, Y Pos, Width, Lenght, Datasource, Border true/false.
-  bigMaxAvgMinTemp = new MaxAvgMinElement(5, 5, 65, 70, *tempData, false);
-  bigMaxAvgMinHum = new MaxAvgMinElement(5, 5, 65, 70, *humData, false);
+  bigMaxAvgMinTemp = new MaxAvgMinElement(5, 5, 65, 70, *tempData, false, 2);
+  bigMaxAvgMinHum = new MaxAvgMinElement(5, 5, 65, 70, *humData, false, 2);
   graphTemp = new GraphElement(5, 5, 80, 70, *tempData, true, AMOUNT_DATAPOINTS, 10);
-  maxAvgMinTemp = new MaxAvgMinElement(90, 5, 65, 70, *tempData, false);
+  maxAvgMinTemp = new MaxAvgMinElement(90, 5, 65, 70, *tempData, false, 1);
   graphHum = new GraphElement(5, 5, 80, 70, *humData, true, AMOUNT_DATAPOINTS, 10);
-  maxAvgMinHum = new MaxAvgMinElement(90, 5, 65, 70, *humData, false);
+  maxAvgMinHum = new MaxAvgMinElement(90, 5, 65, 70, *humData, false, 1);
   showCurrentTemp = new showCurrentValue(0, 0, 40, 80, *tempData, false); 
   showCurrentHum = new showCurrentValue(0, 40, 40, 80, *humData, false);
 
@@ -386,4 +389,5 @@ void loop() {
     buttonPressedLastCycle = false;
   }
 }
+
 
