@@ -269,45 +269,64 @@ bool buttonPressedLastCycle = false;
 bool sht3xErrorLastCycle = false;
 
 
-
 // CONFIG START
+DataStorage* tempData;
+DataStorage* humData;
+GraphElement* graphTemp;
+GraphElement* graphHum;
+MaxAvgMinElement* bigMaxAvgMinTemp;
+MaxAvgMinElement* bigMaxAvgMinHum;
+MaxAvgMinElement* maxAvgMinTemp;
+MaxAvgMinElement* maxAvgMinHum;
+showCurrentValue* showCurrentTemp;
+showCurrentValue* showCurrentHum;
+Screen* screenTemp;
+Screen* screenHum;
+Screen* screenBigTemp;
+Screen* screenBigHum;
+Screen* screenCurrent;
 
-// Datapoint storage. Arguments: Unit, amount of datapoints to be saved.
-DataStorage tempData("C", AMOUNT_DATAPOINTS);
-DataStorage humData("%", AMOUNT_DATAPOINTS);
-
-// Screen elements. Base arguments: X Pos, Y Pos, Width, Lenght, Datasource, Border true/false.
-GraphElement graphTemp(5, 5, 80, 70, tempData, true, AMOUNT_DATAPOINTS, 10);
-GraphElement graphHum(5, 5, 80, 70, humData, true, AMOUNT_DATAPOINTS, 10);
-MaxAvgMinElement bigMaxAvgMinTemp(5, 5, 65, 70, tempData, false, 2);
-MaxAvgMinElement bigMaxAvgMinHum(5, 5, 65, 70, humData, false, 2);
-MaxAvgMinElement maxAvgMinTemp(90, 5, 65, 70, tempData, false, 1);
-MaxAvgMinElement maxAvgMinHum(90, 5, 65, 70, humData, false, 1);
-showCurrentValue showCurrentTemp(0, 0, 40, 80, tempData, false);
-showCurrentValue showCurrentHum(0, 40, 40, 80, humData, false);
-
-// Element 'collections' / arrays. Arguments: Array containing pointers to elements, nullptr must be at the end.
-Element* elemArrTemp[] { &graphTemp, &maxAvgMinTemp, nullptr };
-Element* elemArrHum[] { &graphHum, &maxAvgMinHum, nullptr };
-Element* elemBigArrTemp[] { &bigMaxAvgMinTemp, nullptr };
-Element* elemBigArrHum[] { &bigMaxAvgMinHum, nullptr };
-Element* currentArr[] { &showCurrentTemp, &showCurrentHum, nullptr };
-
-// Screens. Arguments: Element arrays.
-Screen screenTemp(elemArrTemp);
-Screen screenHum(elemArrHum);
-Screen screenBigTemp(elemBigArrTemp);
-Screen screenBigHum(elemBigArrHum);
-Screen screenCurrent(currentArr);
-
-// Screen 'collections' / arrays: Arguments: Array containing pointers to screens, nullptr must be at the end.
-Screen* screenArr[] = { &screenCurrent, &screenTemp, &screenHum, &screenBigTemp, &screenBigHum, nullptr};
-
-DisplayConfig config(screenArr);
-// CONFIG END
-
+DisplayConfig* config;
 
 void setup() {
+
+  // Datapoint storage. Arguments: Unit, amount of datapoints to be saved.
+  tempData = new DataStorage("C", AMOUNT_DATAPOINTS);
+  humData = new DataStorage("%", AMOUNT_DATAPOINTS);
+
+  // Screen elements. Base arguments: X Pos, Y Pos, Width, Lenght, Datasource, Border true/false.
+  bigMaxAvgMinTemp = new MaxAvgMinElement(5, 5, 65, 70, *tempData, false, 2);
+  bigMaxAvgMinHum = new MaxAvgMinElement(5, 5, 65, 70, *humData, false, 2);
+  graphTemp = new GraphElement(5, 5, 80, 70, *tempData, true, AMOUNT_DATAPOINTS, 10);
+  maxAvgMinTemp = new MaxAvgMinElement(90, 5, 65, 70, *tempData, false, 1);
+  graphHum = new GraphElement(5, 5, 80, 70, *humData, true, AMOUNT_DATAPOINTS, 10);
+  maxAvgMinHum = new MaxAvgMinElement(90, 5, 65, 70, *humData, false, 1);
+  showCurrentTemp = new showCurrentValue(0, 0, 40, 80, *tempData, false); 
+  showCurrentHum = new showCurrentValue(0, 40, 40, 80, *humData, false);
+
+  // Element 'collections' / arrays. Arguments: Array containing pointers to elements, nullptr must be at the end.
+  static Element* elemArrTemp[] = { graphTemp, maxAvgMinTemp, nullptr };
+  static Element* elemArrHum[] = { graphHum, maxAvgMinHum, nullptr };
+  static Element* elemBigArrTemp[] = { bigMaxAvgMinTemp, nullptr };
+  static Element* elemBigArrHum[] = { bigMaxAvgMinHum, nullptr };
+  static Element* currentArr[] = { showCurrentTemp, showCurrentHum, nullptr };
+
+  // Screens. Arguments: Element arrays.
+  screenTemp = new Screen(elemArrTemp);
+  screenHum = new Screen(elemArrHum);
+  screenBigTemp = new Screen(elemBigArrTemp);
+  screenBigHum = new Screen(elemBigArrHum);
+  screenCurrent = new Screen(currentArr);
+
+
+  // Screen 'collections' / arrays: Arguments: Array containing pointers to screens, nullptr must be at the end.
+  static Screen* screenArr[] = { screenCurrent, screenTemp, screenHum, screenBigTemp, screenBigHum, nullptr};
+
+  // Config. Arguments: A screen array.
+  config = new DisplayConfig(screenArr);
+  // CONFIG END
+
+
   Serial.begin(115200);
   Serial.println(F("Serial started."));
 
@@ -326,7 +345,7 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
   if (sht3xErrorLastCycle) {
-    config.drawCurrentScreen();
+    config->drawCurrentScreen();
     sht3xErrorLastCycle = false;
   }
   if (currentMillis - previousMillis >= WAIT_TIME * 1000) {
@@ -335,11 +354,11 @@ void loop() {
       float temp = sht3x.temperature();
       float hum = sht3x.humidity();
 
-      tempData.addData(temp);
-      humData.addData(hum);
+      tempData->addData(temp);
+      humData->addData(hum);
       
 
-      config.drawCurrentScreen();
+      config->drawCurrentScreen();
 
       Serial.print(F("Temperature: "));
       Serial.print(temp);
@@ -361,8 +380,8 @@ void loop() {
   }
   if (digitalRead(buttonPin)){
       if (!buttonPressedLastCycle && millis() - lastDebounceTime > DEBOUNCE_DELAY){
-        config.cycleScreen();
-        config.drawCurrentScreen();
+        config->cycleScreen();
+        config->drawCurrentScreen();
         buttonPressedLastCycle = true;
         lastDebounceTime = millis();
       }
