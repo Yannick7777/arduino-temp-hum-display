@@ -17,7 +17,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST); // Set HW SPI pi
 #define PRIMARY_FOREGROUND_COLOUR tft.color565(187, 0, 255)
 #define SECONDARY_FOREGROUND_COLOUR ST77XX_WHITE
 
-const int buttonPin = 16;
+const int buttonPin = 6;
 
 const int AMOUNT_DATAPOINTS = 30; // ~120 max on Arduino Nano (2kB SRAM)
 const float WAIT_TIME = 60;
