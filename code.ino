@@ -231,7 +231,7 @@ class DisplayConfig {
   DisplayConfig(Screen** screens) : screens(screens), screenIndex(0), screenCount(0){
     while (this->screens[this->screenCount] != nullptr) this->screenCount++;
     tft.initR(INITR_MINI160x80);
-    tft.setRotation(1);
+    tft.setRotation(3);
     tft.fillScreen(BACKGROUND_COLOUR);
   };
 
