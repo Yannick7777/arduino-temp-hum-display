@@ -19,7 +19,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST); // Set HW SPI pi
 
 const int buttonPin = 6;
 
-const int AMOUNT_DATAPOINTS = 30; // ~120 max on Arduino Nano (2kB SRAM)
+const int AMOUNT_DATAPOINTS = 30; // ~100 max on Arduino Nano (2kB SRAM)
 const float WAIT_TIME = 60;
 
 class DataStorage {
