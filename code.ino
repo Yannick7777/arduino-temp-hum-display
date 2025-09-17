@@ -244,6 +244,10 @@ class DisplayConfig {
     this->drawScreen(i);    
   };
 
+  void fillScreen(int c){
+    tft.fillScreen(c);
+  }
+
   void cycleScreen() {this->screenIndex = (this->screenIndex + 1) % this->screenCount;}
 
   // Screen* getCurrentScreen() {return this->screens[this->screenIndex];}
@@ -262,11 +266,13 @@ class DisplayConfig {
 
 
 
-const byte DEBOUNCE_DELAY = 100;
+const byte DEBOUNCE_DELAY_MILLY = 100;
+const int SLEEP_DELAY_SECONDS = 30;
 unsigned long previousMillis = -1000000000;
-unsigned long lastDebounceTime = 0;
+unsigned long lastPressTime = millis();
 bool buttonPressedLastCycle = false;
 bool sht3xErrorLastCycle = false;
+bool isSleeping = false;
 
 
 // CONFIG START
@@ -348,6 +354,14 @@ void loop() {
     config->drawCurrentScreen();
     sht3xErrorLastCycle = false;
   }
+  if (currentMillis - lastPressTime >= SLEEP_DELAY_SECONDS * 1000) {
+    isSleeping = true;
+  }
+
+  if (isSleeping) {
+    config->fillScreen(BACKGROUND_COLOUR);
+  }
+
   if (currentMillis - previousMillis >= WAIT_TIME * 1000) {
     previousMillis = currentMillis;
     if (sht3x.measure()) {
@@ -379,11 +393,15 @@ void loop() {
     }
   }
   if (digitalRead(buttonPin)){
-      if (!buttonPressedLastCycle && millis() - lastDebounceTime > DEBOUNCE_DELAY){
-        config->cycleScreen();
-        config->drawCurrentScreen();
+      if (!buttonPressedLastCycle && millis() - lastPressTime > DEBOUNCE_DELAY_MILLY){
         buttonPressedLastCycle = true;
-        lastDebounceTime = millis();
+        lastPressTime = millis();
+        if (isSleeping) {
+          isSleeping = false;
+        } else {
+          config->cycleScreen();
+        }
+        config->drawCurrentScreen();
       }
   } else {
     buttonPressedLastCycle = false;
