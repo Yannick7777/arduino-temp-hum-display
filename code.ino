@@ -262,7 +262,7 @@ class DisplayConfig {
 
 
 
-const byte DEBOUNCE_DELAY = 50;
+const byte DEBOUNCE_DELAY = 100;
 unsigned long previousMillis = -1000000000;
 unsigned long lastDebounceTime = 0;
 bool buttonPressedLastCycle = false;
