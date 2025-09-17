@@ -266,7 +266,7 @@ class DisplayConfig {
 
 
 
-const byte DEBOUNCE_DELAY_MILLY = 100;
+const byte DEBOUNCE_DELAY_MILLY = 250;
 const int SLEEP_DELAY_SECONDS = 30;
 unsigned long previousMillis = -1000000000;
 unsigned long lastPressTime = millis();
