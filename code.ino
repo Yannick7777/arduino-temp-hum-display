@@ -148,7 +148,7 @@ class showCurrentValue : public Element {
     tft.setTextSize(5);
     tft.setTextColor(PRIMARY_FOREGROUND_COLOUR);
     tft.setCursor(this->X + 1, this->Y + 1);
-    tft.print(this->data.getDataByIndex(0), 1);
+    tft.print(this->data.getDataByIndex(data.getCursor() - 1), 1)
     tft.print(this->data.getUnit());
   };
 };
