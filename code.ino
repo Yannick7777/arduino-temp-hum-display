@@ -381,7 +381,7 @@ void loop() {
       Serial.println(F("%"));
     } else {
       Serial.println(F("SHT3x read error"));
-      tft.fillScreen(0xF000);
+      config->fillScreen(0xF000);
       tft.setCursor(0, 0);
       tft.setTextColor(SECONDARY_FOREGROUND_COLOUR);
       tft.setTextSize(3);
