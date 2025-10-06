@@ -1,3 +1,11 @@
+/*
+Tested library versions:
+Adafruit BusIO: 1.17.4
+Adafruit GFX Library: 1.12.3
+Adafruit ST7735 and ST7789 Library: 1.11.0
+ArtronShop_SHT3x: 1.0.0
+*/
+
 #include <Arduino.h>
 
 #include <Wire.h>
