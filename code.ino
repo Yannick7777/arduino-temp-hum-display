@@ -33,6 +33,7 @@ const float WAIT_TIME = 60;
 class DataStorage {
 private:
   float data[AMOUNT_DATAPOINTS];
+  int alltimeDatapointCount;
   int rIndex;
   int rCount;
   const int MAX_DATA_POINTS;
@@ -40,7 +41,7 @@ private:
 
 public:
   DataStorage(String unit, int maxDataPoints)
-    : UNIT(unit), MAX_DATA_POINTS(maxDataPoints), rIndex(0), rCount(0) {
+    : UNIT(unit), MAX_DATA_POINTS(maxDataPoints), rIndex(0), rCount(0), alltimeDatapointCount(0) {
     for (int i = 0; i < this->MAX_DATA_POINTS; i++) {
       this->data[i] = 0;
     }
@@ -48,6 +49,7 @@ public:
 
   void addData(float newData) {
     this->data[this->rIndex] = newData;
+    this->alltimeDatapointCount++;
     this->rIndex = (this->rIndex + 1) % this->MAX_DATA_POINTS;
     if (this->rCount < this->MAX_DATA_POINTS) this->rCount++;
   }
@@ -90,6 +92,7 @@ public:
   }
 
   String getUnit() { return this->UNIT; }
+  int getAlltimeDatapointCount() { return this->alltimeDatapointCount; }
 };
 
 class Element {
@@ -164,7 +167,7 @@ class showCurrentValue : public Element {
 class TextElement : public Element {
 protected:
   String text;
-  int textSize;
+  const int textSize;
 public:
   TextElement(int x, int y, int width, int height, DataStorage& data, bool drawBorder, String text, int textSize)
   : Element(x, y, width, height, data, drawBorder), text(text), textSize(textSize) {};
@@ -173,11 +176,31 @@ public:
     this->eraseBorderContent();
 
     tft.setTextSize(this->textSize);
-    tft.setTextColor(PRIMARY_FOREGROUND_COLOUR);
-    tft.setCursor(this->X + 1, this->Y / 2);
+    tft.setTextColor(SECONDARY_FOREGROUND_COLOUR);
+    tft.setCursor(this->X + 1, this->Y + this->HEIGHT / 2 - this->textSize * 3.5);
     tft.print(this->text);
   };
 };
+
+class AlltimeElement : public Element {
+protected:
+  const int textSize;
+  float currentAvg;
+public:
+  AlltimeElement(int x, int y, int width, int height, DataStorage& data, bool drawBorder, int textSize)
+  : Element(x, y, width, height, data, drawBorder), textSize(textSize) {};
+  void render() override {
+    if (this->DRAW_BORDER) this->drawBorder();
+    this->eraseBorderContent();
+
+    tft.setTextSize(this->textSize);
+    tft.setTextColor(SECONDARY_FOREGROUND_COLOUR);
+    tft.setCursor(this->X + 1, this->Y + this->HEIGHT / 2 - this->textSize * 3.5);
+    this->currentAvg = ((data.getAlltimeDatapointCount() - 1) * this->currentAvg + data.getDataByIndex(data.getCursor() - 1)) / data.getAlltimeDatapointCount();
+    tft.print(this->currentAvg);
+    tft.print(this->data.getUnit());
+  }
+}; 
 
 class GraphElement : public Element {
 private:
@@ -304,6 +327,7 @@ bool isSleeping = false;
 // CONFIG START
 DataStorage* tempData;
 DataStorage* humData;
+DataStorage* noData;
 GraphElement* graphTemp;
 GraphElement* graphHum;
 MaxAvgMinElement* bigMaxAvgMinTemp;
@@ -312,11 +336,15 @@ MaxAvgMinElement* maxAvgMinTemp;
 MaxAvgMinElement* maxAvgMinHum;
 showCurrentValue* showCurrentTemp;
 showCurrentValue* showCurrentHum;
+TextElement* alltimeText;
+AlltimeElement* alltimeTemp;
+AlltimeElement* alltimeHum;
 Screen* screenTemp;
 Screen* screenHum;
 Screen* screenBigTemp;
 Screen* screenBigHum;
 Screen* screenCurrent;
+Screen* screenAlltime;
 
 DisplayConfig* config;
 
@@ -325,8 +353,9 @@ void setup() {
   // Datapoint storage. Arguments: Unit, amount of datapoints to be saved.
   tempData = new DataStorage("C", AMOUNT_DATAPOINTS);
   humData = new DataStorage("%", AMOUNT_DATAPOINTS);
+  noData = new DataStorage("", 0);
 
-  // Screen elements. Base arguments: X Pos, Y Pos, Width, Lenght, Datasource, Border true/false.
+  // Screen elements. Base arguments: X Pos, Y Pos, Width, Height, Datasource, Border true/false.
   bigMaxAvgMinTemp = new MaxAvgMinElement(5, 5, 65, 70, *tempData, false, 2);
   bigMaxAvgMinHum = new MaxAvgMinElement(5, 5, 65, 70, *humData, false, 2);
   graphTemp = new GraphElement(5, 5, 80, 70, *tempData, true, AMOUNT_DATAPOINTS, 10);
@@ -335,6 +364,9 @@ void setup() {
   maxAvgMinHum = new MaxAvgMinElement(90, 5, 65, 70, *humData, false, 1);
   showCurrentTemp = new showCurrentValue(0, 0, 40, 80, *tempData, false); 
   showCurrentHum = new showCurrentValue(0, 40, 40, 80, *humData, false);
+  alltimeText = new TextElement(0, 1, 80, 26, *noData, false, F("Alltime Avg"), 2);
+  alltimeTemp = new AlltimeElement(0, 27, 80, 26, *tempData, false, 2);
+  alltimeHum = new AlltimeElement(0, 53, 80, 26, *humData, false, 2);
 
   // Element 'collections' / arrays. Arguments: Array containing pointers to elements, nullptr must be at the end.
   static Element* elemArrTemp[] = { graphTemp, maxAvgMinTemp, nullptr };
@@ -342,6 +374,7 @@ void setup() {
   static Element* elemBigArrTemp[] = { bigMaxAvgMinTemp, nullptr };
   static Element* elemBigArrHum[] = { bigMaxAvgMinHum, nullptr };
   static Element* currentArr[] = { showCurrentTemp, showCurrentHum, nullptr };
+  static Element* alltimeArr[] = { alltimeText, alltimeTemp, alltimeHum, nullptr };
 
   // Screens. Arguments: Element arrays.
   screenTemp = new Screen(elemArrTemp);
@@ -349,10 +382,10 @@ void setup() {
   screenBigTemp = new Screen(elemBigArrTemp);
   screenBigHum = new Screen(elemBigArrHum);
   screenCurrent = new Screen(currentArr);
-
+  screenAlltime = new Screen(alltimeArr);
 
   // Screen 'collections' / arrays: Arguments: Array containing pointers to screens, nullptr must be at the end.
-  static Screen* screenArr[] = { screenCurrent, screenTemp, screenHum, screenBigTemp, screenBigHum, nullptr};
+  static Screen* screenArr[] = { screenCurrent, screenTemp, screenHum, screenBigTemp, screenBigHum, screenAlltime, nullptr};
 
   // Config. Arguments: A screen array.
   config = new DisplayConfig(screenArr);
@@ -433,5 +466,6 @@ void loop() {
     buttonPressedLastCycle = false;
   }
 }
+
 
 
