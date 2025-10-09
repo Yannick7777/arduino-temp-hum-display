@@ -161,6 +161,21 @@ class showCurrentValue : public Element {
   };
 };
 
+class TextElement : public Element {
+protected:
+  String text;
+  int textSize;
+public:
+  TextElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, String text, int textSize)
+  : Element(x, y, width, height, data, drawBoarder), text(text), textSize(textSize) {};
+  void render() override {
+    tft.setTextSize(this->textSize);
+    tft.setTextColor(PRIMARY_FOREGROUND_COLOUR);
+    tft.setCursor(this->X + 1, this->Y / 2);
+    tft.print(this->text);
+  };
+};
+
 class GraphElement : public Element {
 private:
   const int AMOUNT_DATAPOINTS;
