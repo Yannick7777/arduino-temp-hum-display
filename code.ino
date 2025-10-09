@@ -33,6 +33,7 @@ const float WAIT_TIME = 60;
 class DataStorage {
 private:
   float data[AMOUNT_DATAPOINTS];
+  float allTimeAvg;
   int alltimeDatapointCount;
   int rIndex;
   int rCount;
@@ -52,6 +53,7 @@ public:
     this->alltimeDatapointCount++;
     this->rIndex = (this->rIndex + 1) % this->MAX_DATA_POINTS;
     if (this->rCount < this->MAX_DATA_POINTS) this->rCount++;
+    this->allTimeAvg = ((this->alltimeDatapointCount - 1) * this->allTimeAvg + this->getDataByIndex(this->rCount - 1)) / this->alltimeDatapointCount;
   }
 
   float getDataByIndex(int logicalIndex) {
@@ -90,6 +92,8 @@ public:
     }
     return sum / this->rCount;
   }
+
+  float getAlltimeAvgDataPoint() { return this->allTimeAvg; }
 
   String getUnit() { return this->UNIT; }
   int getAlltimeDatapointCount() { return this->alltimeDatapointCount; }
@@ -192,12 +196,10 @@ public:
   void render() override {
     if (this->DRAW_BORDER) this->drawBorder();
     this->eraseBorderContent();
-
     tft.setTextSize(this->textSize);
     tft.setTextColor(SECONDARY_FOREGROUND_COLOUR);
     tft.setCursor(this->X + 1, this->Y + this->HEIGHT / 2 - this->textSize * 3.5);
-    this->currentAvg = ((data.getAlltimeDatapointCount() - 1) * this->currentAvg + data.getDataByIndex(data.getCursor() - 1)) / data.getAlltimeDatapointCount();
-    tft.print(this->currentAvg);
+    tft.print(this->data.getAlltimeAvgDataPoint());
     tft.print(this->data.getUnit());
   }
 }; 
