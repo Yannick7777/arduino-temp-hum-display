@@ -98,20 +98,20 @@ protected:
   const int Y;
   const int WIDTH;
   const int HEIGHT;
-  const bool DRAW_BOARDER;
+  const bool DRAW_BORDER;
   const DataStorage& data;
 
-  void drawBoarder() {
+  void drawBorder() {
     tft.drawRect(X, Y, WIDTH, HEIGHT, PRIMARY_FOREGROUND_COLOUR);
   }
 
-  void eraseBoarderContent() {
+  void eraseBorderContent() {
     tft.fillRect(X + 1, Y + 1, WIDTH - 2, HEIGHT - 2, BACKGROUND_COLOUR);
   }
 
 public:
-   Element(int x, int y, int width, int height, DataStorage& data, bool drawBoarder)
-    : X(x), Y(y), WIDTH(width), HEIGHT(height), data(data), DRAW_BOARDER(drawBoarder) {}
+   Element(int x, int y, int width, int height, DataStorage& data, bool drawBorder)
+    : X(x), Y(y), WIDTH(width), HEIGHT(height), data(data), DRAW_BORDER(drawBorder) {}
 
   virtual void render() = 0;
 };
@@ -120,11 +120,11 @@ class MaxAvgMinElement : public Element {
   protected:
     const int textSize;
   public:
-   MaxAvgMinElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, int textSize)
-    : Element(x, y, width, height, data, drawBoarder), textSize(textSize) {}
+   MaxAvgMinElement(int x, int y, int width, int height, DataStorage& data, bool drawBorder, int textSize)
+    : Element(x, y, width, height, data, drawBorder), textSize(textSize) {}
   void render() override {
-    if (this->DRAW_BOARDER) this->drawBoarder();
-    this->eraseBoarderContent();
+    if (this->DRAW_BORDER) this->drawBorder();
+    this->eraseBorderContent();
 
     const String unit = this->data.getUnit();
     tft.setTextSize(this->textSize);
@@ -149,8 +149,8 @@ class showCurrentValue : public Element {
   public:
   using Element::Element;
   void render() override {
-    if (this->DRAW_BOARDER) this->drawBoarder();
-    this->eraseBoarderContent();
+    if (this->DRAW_BORDER) this->drawBorder();
+    this->eraseBorderContent();
 
     const String unit = this->data.getUnit();
     tft.setTextSize(5);
@@ -166,11 +166,11 @@ protected:
   String text;
   int textSize;
 public:
-  TextElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, String text, int textSize)
-  : Element(x, y, width, height, data, drawBoarder), text(text), textSize(textSize) {};
+  TextElement(int x, int y, int width, int height, DataStorage& data, bool drawBorder, String text, int textSize)
+  : Element(x, y, width, height, data, drawBorder), text(text), textSize(textSize) {};
   void render() override {
-    if (this->DRAW_BOARDER) this->drawBoarder();
-    this->eraseBoarderContent();
+    if (this->DRAW_BORDER) this->drawBorder();
+    this->eraseBorderContent();
 
     tft.setTextSize(this->textSize);
     tft.setTextColor(PRIMARY_FOREGROUND_COLOUR);
@@ -204,11 +204,11 @@ private:
   }
 
 public:
-  GraphElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, int amountDataPoints, int margin)
-    : Element(x, y, width, height, data, drawBoarder), AMOUNT_DATAPOINTS(amountDataPoints), MARGIN(margin) {}
+  GraphElement(int x, int y, int width, int height, DataStorage& data, bool drawBorder, int amountDataPoints, int margin)
+    : Element(x, y, width, height, data, drawBorder), AMOUNT_DATAPOINTS(amountDataPoints), MARGIN(margin) {}
   void render() override {
-    if (this->DRAW_BOARDER) this->drawBoarder();
-    this->eraseBoarderContent();
+    if (this->DRAW_BORDER) this->drawBorder();
+    this->eraseBorderContent();
 
     int count = this->data.getCursor();
     if (count == 0) return;
