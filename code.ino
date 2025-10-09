@@ -169,6 +169,9 @@ public:
   TextElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, String text, int textSize)
   : Element(x, y, width, height, data, drawBoarder), text(text), textSize(textSize) {};
   void render() override {
+    if (this->DRAW_BOARDER) this->drawBoarder();
+    this->eraseBoarderContent();
+
     tft.setTextSize(this->textSize);
     tft.setTextColor(PRIMARY_FOREGROUND_COLOUR);
     tft.setCursor(this->X + 1, this->Y / 2);
