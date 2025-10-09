@@ -110,7 +110,7 @@ protected:
   }
 
 public:
-  explicit Element(int x, int y, int width, int height, DataStorage& data, bool drawBoarder)
+   Element(int x, int y, int width, int height, DataStorage& data, bool drawBoarder)
     : X(x), Y(y), WIDTH(width), HEIGHT(height), data(data), DRAW_BOARDER(drawBoarder) {}
 
   virtual void render() = 0;
@@ -120,7 +120,7 @@ class MaxAvgMinElement : public Element {
   protected:
     const int textSize;
   public:
-  explicit MaxAvgMinElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, int textSize)
+   MaxAvgMinElement(int x, int y, int width, int height, DataStorage& data, bool drawBoarder, int textSize)
     : Element(x, y, width, height, data, drawBoarder), textSize(textSize) {}
   void render() override {
     if (this->DRAW_BOARDER) this->drawBoarder();
