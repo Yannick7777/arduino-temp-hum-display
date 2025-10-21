@@ -272,6 +272,16 @@ public:
   };
 };
 
+class SolidColourScreen {
+protected: 
+    int colour;
+public:
+  SolidColourScreen(int colour) : colour(colour){};
+  void render() {
+    tft.fillScreen(this->colour);
+  };
+};
+
 class DisplayConfig {
   private:
   Screen** screens;
@@ -347,6 +357,7 @@ Screen* screenBigTemp;
 Screen* screenBigHum;
 Screen* screenCurrent;
 Screen* screenAlltime;
+SolidColourScreen* screenSaver;
 
 DisplayConfig* config;
 
@@ -385,6 +396,7 @@ void setup() {
   screenBigHum = new Screen(elemBigArrHum);
   screenCurrent = new Screen(currentArr);
   screenAlltime = new Screen(alltimeArr);
+  screenSaver = new SolidColourScreen(BACKGROUND_COLOUR);
 
   // Screen 'collections' / arrays: Arguments: Array containing pointers to screens, nullptr must be at the end.
   static Screen* screenArr[] = { screenCurrent, screenTemp, screenHum, screenBigTemp, screenBigHum, screenAlltime, nullptr};
@@ -420,7 +432,7 @@ void loop() {
   }
 
   if (isSleeping) {
-    config->fillScreen(BACKGROUND_COLOUR);
+    screenSaver->tftrender();
   }
 
   if (currentMillis - previousMillis >= WAIT_TIME * 1000) {
@@ -468,6 +480,4 @@ void loop() {
     buttonPressedLastCycle = false;
   }
 }
-
-
 
