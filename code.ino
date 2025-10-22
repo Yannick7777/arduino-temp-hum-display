@@ -29,6 +29,42 @@ const int buttonPin = 6;
 
 const int AMOUNT_DATAPOINTS = 30; // ~100 max on Arduino Nano (2kB SRAM)
 const float WAIT_TIME = 60;
+const float SLEEP_WAIT_TIME = 2;
+
+int hslHueToRgb565(int c) {
+  byte hArr[3] = {0, 0, 0};
+  switch ( (int) c / 60) {
+    case 0:
+      hArr[0] = 255;
+      hArr[1] = map(c, 0, 60, 0, 255);
+      break;
+    case 1:
+      hArr[1] = 255;
+      hArr[0] = map(c % 60, 0, 60, 255, 0);
+      break;
+    case 2:
+      hArr[1] = 255;
+      hArr[2] = map(c % 60, 0, 60, 0, 255);
+      break;
+    case 3:
+      hArr[2] = 255;
+      hArr[1] = map(c % 60, 0, 60, 255, 0);
+      break;
+    case 4:
+      hArr[2] = 255;
+      hArr[0] = map(c % 60, 0, 60, 0, 255);
+      break;
+    case 5:
+      hArr[0] = 255;
+      hArr[2] = map(c % 60, 0, 60, 255, 0);
+  }
+
+    int red   = (hArr[0] >> 3) & 0x1F;  // Bitshift 3 (devide by 8), cap to 0x1F => 31 with help of bit-per-bit AND
+    int green = (hArr[1] >> 2) & 0x3F;
+    int blue  = (hArr[2] >> 3) & 0x1F;
+
+    return (red << 11) | (green << 5) | blue; //Bitshift all values into correct positions
+}
 
 class DataStorage {
 private:
@@ -282,6 +318,62 @@ public:
   };
 };
 
+class ScreenSaver {
+protected:
+  int x;
+  int y;
+  int width;
+  int height;
+  int posX;
+  int posY;
+  bool accelX; // True => +, False => -
+  bool accelY;
+  int speed;
+  int textSize;
+  int dataStorageCount;
+  int colour;
+  int colourChangeSpeed;
+  DataStorage** data;
+
+  void draw (){
+    this->colour = (this->colour + this->colourChangeSpeed) % 360;
+    tft.fillRect(this->x, this->y, this->width, this->height, BACKGROUND_COLOUR);
+    tft.setTextSize(this->textSize);
+    tft.setTextColor(hslHueToRgb565(this->colour));
+    for(int i = 0; this->dataStorageCount > i; i++) {
+      tft.setTextWrap(false);
+      tft.setCursor(this->posX, this->posY + i * 8 * this->textSize);
+      tft.println(this->data[i]->getDataByIndex(this->data[i]->getCursor() - 1) + this->data[i]->getUnit());
+    }
+  };
+  void move (){
+    const int cornerX = this->posX + this->textSize * 6 * 6 - 1; // 5: Char width, 6: Char count // 1 as there's a single transparent pixel at the right
+    const int cornerY = this->posY + this->textSize * 8 * this->dataStorageCount - 1; // 7: Char height // 1 as there's a single transparent pixel at the bottom
+
+    if (cornerX + this->speed > this->width || this->posX - this->speed < 0) {
+      this->accelX = !this->accelX;
+    };
+
+    if (cornerY + this->speed > this->height || this->posY - this->speed < 0) {
+      this->accelY = !this->accelY;
+    };
+
+    this->accelX ? this->posX += this->speed : this->posX -= this->speed;
+    this->accelY ? this->posY += this->speed : this->posY -= this->speed;
+  };
+
+public:
+  ScreenSaver(int x, int y, int width, int height, int textSize, int speed, int colourChangeSpeed, DataStorage** data)
+  : x(x), y(y), width(width), height(height), posX(0), posY(0), accelX(false), accelY(false), speed(speed), data(data),
+  textSize(textSize), dataStorageCount(0), colour(0), colourChangeSpeed(colourChangeSpeed) {
+    while (this->data[this->dataStorageCount] != nullptr) this->dataStorageCount++;
+  }
+  void render(){
+    this->draw();
+    this->move();
+  };
+};
+
 class DisplayConfig {
   private:
   Screen** screens;
@@ -330,6 +422,7 @@ class DisplayConfig {
 const byte DEBOUNCE_DELAY_MILLY = 250;
 const int SLEEP_DELAY_SECONDS = 30;
 unsigned long previousMillis = -1000000000;
+unsigned long sleepPreviousMillis = -1000000000;
 unsigned long lastPressTime = millis();
 bool buttonPressedLastCycle = false;
 bool sht3xErrorLastCycle = false;
@@ -357,7 +450,7 @@ Screen* screenBigTemp;
 Screen* screenBigHum;
 Screen* screenCurrent;
 Screen* screenAlltime;
-SolidColourScreen* screenSaver;
+ScreenSaver* screenSaver;
 
 DisplayConfig* config;
 
@@ -396,13 +489,19 @@ void setup() {
   screenBigHum = new Screen(elemBigArrHum);
   screenCurrent = new Screen(currentArr);
   screenAlltime = new Screen(alltimeArr);
-  screenSaver = new SolidColourScreen(BACKGROUND_COLOUR);
 
   // Screen 'collections' / arrays: Arguments: Array containing pointers to screens, nullptr must be at the end.
   static Screen* screenArr[] = { screenCurrent, screenTemp, screenHum, screenBigTemp, screenBigHum, screenAlltime, nullptr};
 
   // Config. Arguments: A screen array.
   config = new DisplayConfig(screenArr);
+
+  // Screensaver
+  // Array containing datasource
+  static DataStorage* screenSaverDataStorage[] = { tempData, humData, nullptr };
+  // Screensaver config: X Pos, Y Pos, Width, Height, Textsize, Movement Speed, Colour changing speed, Datasource Array
+  screenSaver = new ScreenSaver(0, 0, 160, 80, 2, 3, 5, screenSaverDataStorage);
+
   // CONFIG END
 
 
@@ -420,7 +519,6 @@ void setup() {
   delay(1000);
 }
 
-
 void loop() {
   unsigned long currentMillis = millis();
   if (sht3xErrorLastCycle) {
@@ -431,8 +529,9 @@ void loop() {
     isSleeping = true;
   }
 
-  if (isSleeping) {
-    screenSaver->tftrender();
+  if (isSleeping && currentMillis - sleepPreviousMillis >= SLEEP_WAIT_TIME * 1000) {
+    sleepPreviousMillis = currentMillis;
+    screenSaver->render(); // Add logic to render every SLEEP_WAIT_TIME
   }
 
   if (currentMillis - previousMillis >= WAIT_TIME * 1000) {
@@ -444,8 +543,9 @@ void loop() {
       tempData->addData(temp);
       humData->addData(hum);
       
-
-      config->drawCurrentScreen();
+      if (!isSleeping) {
+        config->drawCurrentScreen();
+      }
 
       Serial.print(F("Temperature: "));
       Serial.print(temp);
