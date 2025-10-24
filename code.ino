@@ -26,10 +26,20 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST); // Set HW SPI pi
 #define SECONDARY_FOREGROUND_COLOUR ST77XX_WHITE
 
 const int buttonPin = 6;
+unsigned long lastPressTime = millis();
+bool buttonPressedLastCycle = false;
+bool sht3xErrorLastCycle = false;
+bool isSleeping = false;
+unsigned long previousMillis = -1000000000;
+unsigned long sleepPreviousMillis = -1000000000;
+const byte DEBOUNCE_DELAY_MILLY = 250;
+
 
 const int AMOUNT_DATAPOINTS = 30; // ~100 max on Arduino Nano (2kB SRAM)
 const float WAIT_TIME = 60;
 const float SLEEP_WAIT_TIME = 2;
+const int SLEEP_DELAY_SECONDS = 30;
+
 
 int hslHueToRgb565(int c) {
   byte hArr[3] = {0, 0, 0};
@@ -417,18 +427,6 @@ class DisplayConfig {
 };
 
 
-
-
-const byte DEBOUNCE_DELAY_MILLY = 250;
-const int SLEEP_DELAY_SECONDS = 30;
-unsigned long previousMillis = -1000000000;
-unsigned long sleepPreviousMillis = -1000000000;
-unsigned long lastPressTime = millis();
-bool buttonPressedLastCycle = false;
-bool sht3xErrorLastCycle = false;
-bool isSleeping = false;
-
-
 // CONFIG START
 DataStorage* tempData;
 DataStorage* humData;
@@ -501,7 +499,6 @@ void setup() {
   static DataStorage* screenSaverDataStorage[] = { tempData, humData, nullptr };
   // Screensaver config: X Pos, Y Pos, Width, Height, Textsize, Movement Speed, Colour changing speed, Datasource Array
   screenSaver = new ScreenSaver(0, 0, 160, 80, 2, 3, 5, screenSaverDataStorage);
-
   // CONFIG END
 
 
