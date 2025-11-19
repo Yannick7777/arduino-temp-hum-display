@@ -88,7 +88,7 @@ private:
 
 public:
   DataStorage(String unit, int maxDataPoints)
-    : UNIT(unit), MAX_DATA_POINTS(maxDataPoints), rIndex(0), rCount(0), alltimeDatapointCount(0) {
+    : UNIT(unit), MAX_DATA_POINTS(maxDataPoints), rIndex(0), rCount(0), alltimeDatapointCount(0). alltimeAvg(0B) {
     for (int i = 0; i < this->MAX_DATA_POINTS; i++) {
       this->data[i] = 0;
     }
@@ -577,4 +577,5 @@ void loop() {
     buttonPressedLastCycle = false;
   }
 }
+
 
